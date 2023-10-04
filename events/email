@@ -1,32 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 
-# scans an image with 150 dpi, autocrops and starts thunderbird with a new email and the scanned
-# image attached
-# scanimage options are tuned for Canon LiDE 210
+# prevent multiple instances of the script from running
+pidof -o %PPID -x "$0" >/dev/null && echo "ERROR: Another scan operation is already in progress ($0) please wait until it completes." && exit 1
 
-TMPFILE="/tmp/scan.tiff"
-OUTFILE="/tmp/email-$(date '+%Y-%m-%d-%H-%M-%S').jpg"
-LOCKFILE="/tmp/insaned-scan.lock"
-INSANED_LOGFILE="/tmp/insaned.log"
+# store the current script dir
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-if [ -f "$LOCKFILE" ]; then
-    echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
-    exit 0
+echo "initiating email"
+
+# import variable values from .env file - see: ssjs_example.env for more
+set -o allexport
+source "$SCRIPT_DIR/.env"
+set +o allexport
+
+# set PATH
+PATH=$PATH:/bin:/usr/bin
+export PATH
+
+if [[ -z ${DEVICE_ID} ]] ; then
+    echo "setting device ID to: $1"
+    export DEVICE_ID="$1"
 fi
-# cleanup on exit
-finish() {
-    rm -f "$LOCKFILE" >/dev/null 2>&1
-}
-trap finish EXIT
-touch "$LOCKFILE"
 
+# choose which scan script to launch when the button named 'scan' is pressed
+# set this variable in your .env file
+source "$SCRIPT_DIR/user/email_prepare"
 
-rm -f "$TMPFILE" >/dev/null 2>&1
+source "$SCRIPT_DIR/$SCAN_SCRIPT"
 
-# for Canon LiDE 210
-scanimage --device-name "$1" --format tiff --mode Color --swdeskew=yes --swcrop=yes \
-    --resolution 150 --contrast 10 --brightness 5 > "$TMPFILE"
-
-convert "$TMPFILE" -quality 90 "$OUTFILE" >> "$INSANED_LOGFILE" 2>&1
-thunderbird -compose "attachment='$OUTFILE'"
-
+source "$SCRIPT_DIR/user/email"

@@ -1,37 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 
-# scans a DIN A4 document with 300 dpi and directly prints it
-# scanimage options are tuned for Canon LiDE 210
+# prevent multiple instances of the script from running
+pidof -o %PPID -x "$0" >/dev/null && echo "ERROR: Another scan operation is already in progress ($0) please wait until it completes." && exit 1
 
-TMPFILE="/tmp/scan.tiff"
-LOCKFILE="/tmp/insaned-scan.lock"
-INSANED_LOGFILE="/tmp/insaned.log"
+# store the current script dir
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# shamelessly stolen from scanbuttond and modified for Canon LiDE 210 and Canon Pixma IP4000
-# respectively
-#
-# This example turns your scanner+printer into a photocopier.
-# Fine-tuned for the Epson Perfection 2400, the HP LaserJet 1200 and
-# ISO A4 paper size so that the scanned document matches the printer
-# output as closely as possible.
+echo "initiating copy"
 
-if [ -f "$LOCKFILE" ]; then
-    echo "Error: Another scanning operation is currently in progress" >> "$INSANED_LOGFILE"
-    exit 0
+# import variable values from .env file - see: ssjs_example.env for more
+set -o allexport
+source "$SCRIPT_DIR/.env"
+set +o allexport
+
+# set PATH
+PATH=$PATH:/bin:/usr/bin
+export PATH
+
+if [[ -z ${DEVICE_ID} ]] ; then
+    echo "setting device ID to: $1"
+    export DEVICE_ID="$1"
 fi
-# cleanup on exit
-finish() {
-    rm -f "$LOCKFILE" >/dev/null 2>&1
-}
-trap finish EXIT
-touch "$LOCKFILE"
 
+# choose which scan script to launch when the button named 'scan' is pressed
+# set this variable in your .env file
+source "$SCRIPT_DIR/user/copy_prepare"
 
-rm -f "$TMPFILE" >/dev/null 2>&1
+source "$SCRIPT_DIR/$SCAN_SCRIPT"
 
-# for Canon LiDE 210
-scanimage --device-name "$1" --format tiff --mode Gray \
-    -l 2 -t 0 -x 206 -y 293 --resolution 300 --contrast 18 --brightness 4 --swdespeck=yes --despeck 3 > "$TMPFILE"
-
-tiff2ps -c -w 8.11 -h 11.54 "$TMPFILE" | lpr >> "$INSANED_LOGFILE" 2>&1 &
-
+source "$SCRIPT_DIR/user/copy"
