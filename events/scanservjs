@@ -46,8 +46,8 @@ curl "$SSJS_PROTOCOL://$SSJS_HOST:$SSJS_PORT/context" \
 
 # then POST a request to scan image
 echo -e "scanning image ... this could take some time depending on the number of pages"
-# curl -vvv curl https://httpbin.org/post \
-curl "$SSJS_PROTOCOL://$SSJS_HOST:$SSJS_PORT/$SSJS_PATH" \
+
+RESPONSE=$(curl "$SSJS_PROTOCOL://$SSJS_HOST:$SSJS_PORT/$SSJS_PATH" \
   -H "Connection: keep-alive" \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -71,4 +71,6 @@ curl "$SSJS_PROTOCOL://$SSJS_HOST:$SSJS_PORT/$SSJS_PATH" \
     "index": 1
 }
 EOF
+)
 
+echo "Got response: $RESPONSE"

@@ -24,5 +24,9 @@ fi
 
 # choose which scan script to launch when the button named 'scan' is pressed
 # set this variable in your .env file
+source "$SCRIPT_DIR/user/scan_prepare"
+
 source "$SCRIPT_DIR/$SCAN_SCRIPT"
+
+source "$SCRIPT_DIR/user/scan"
 
