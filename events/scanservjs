@@ -58,7 +58,7 @@ RESPONSE=$(curl "$SSJS_PROTOCOL://$SSJS_HOST:$SSJS_PORT/$SSJS_PATH" \
   --data @- <<EOF
 {
     "params": {
-        "deviceId": "$SSJS_DEVICE_ID",
+        "deviceId": "$DEVICE_ID",
         "resolution": $SSJS_RESOLUTION,
         "mode": "$SSJS_MODE",
         "source": "$SSJS_SOURCE",
